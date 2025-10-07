@@ -608,7 +608,7 @@ export const WorkerDetailsDialog = ({ worker, open, onOpenChange }: WorkerDetail
                             {(task.has_penalty || task.penalty_applied) ? (
                               <>
                                 <Badge variant="destructive" className="font-display font-semibold text-lg px-4 py-2">
-                                  {worker.role === 'dispatcher' ? '-' : '+'}{(Number(task.payment) * (1 - ((worker.penalty_percentage || 10) / 100))).toLocaleString('ru-RU')} ₽
+                                  {(Number(task.payment) * (1 - ((worker.penalty_percentage || 10) / 100))).toLocaleString('ru-RU')} ₽
                                 </Badge>
                                 <Badge variant="destructive" className="block text-xs">
                                   Штраф за ошибку ({worker.penalty_percentage || 10}%)
@@ -617,7 +617,7 @@ export const WorkerDetailsDialog = ({ worker, open, onOpenChange }: WorkerDetail
                             ) : (
                               <>
                                 <Badge className="bg-green-500/10 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800 font-display font-semibold text-lg px-4 py-2">
-                                  {worker.role === 'dispatcher' ? '-' : '+'}{Number(task.payment).toLocaleString('ru-RU')} ₽
+                                  {Number(task.payment).toLocaleString('ru-RU')} ₽
                                 </Badge>
                                 {task.is_review && (
                                   <Badge className="block text-xs bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200">
