@@ -11,8 +11,10 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { LogOut, User } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
-import { UserProfileDialog } from '@/components/UserProfileDialog';
+import { WorkerDetailsDialog } from '@/components/WorkerDetailsDialog';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const UserHeader = () => {
   const { user, signOut, isAdmin } = useAuth();
@@ -20,6 +22,60 @@ const UserHeader = () => {
   const location = useLocation();
   const isHomePage = location.pathname === "/";
   const isMobile = useIsMobile();
+
+  // Загружаем полные данные пользователя из таблицы users
+  const { data: fullUserData } = useQuery({
+    queryKey: ['user-full-data', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return null;
+      
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('uuid_user', user.id)
+        .single();
+      
+      if (error) throw error;
+      
+      // Обогащаем completed_tasks деталями о задачах
+      let enrichedCompletedTasks = [];
+      if (data.completed_tasks && data.completed_tasks.length > 0) {
+        const taskIds = data.completed_tasks.map((task: any) => task.task_id);
+        
+        const { data: tasks, error: tasksError } = await supabase
+          .from('zadachi')
+          .select(`
+            id_zadachi,
+            title,
+            completed_at,
+            execution_time_seconds,
+            zakaz_id,
+            zakazi!inner(title)
+          `)
+          .in('id_zadachi', taskIds);
+
+        if (!tasksError && tasks) {
+          enrichedCompletedTasks = data.completed_tasks.map((completedTask: any) => {
+            const taskDetails = tasks?.find(task => task.id_zadachi === completedTask.task_id);
+            return {
+              ...completedTask,
+              task_title: taskDetails?.title,
+              order_title: taskDetails?.zakazi?.title,
+              completed_date: taskDetails?.completed_at,
+              execution_time_seconds: taskDetails?.execution_time_seconds,
+              is_review: data.role === 'dispatcher'
+            };
+          });
+        }
+      }
+      
+      return {
+        ...data,
+        completed_tasks: enrichedCompletedTasks
+      };
+    },
+    enabled: !!user?.id && isProfileDialogOpen,
+  });
 
   if (!user) return null;
 
@@ -89,7 +145,21 @@ const UserHeader = () => {
         </DropdownMenuContent>
       </DropdownMenu>
       
-      <UserProfileDialog 
+      <WorkerDetailsDialog 
+        worker={fullUserData || {
+          uuid_user: user.id,
+          full_name: user.full_name || user.email || 'Пользователь',
+          email: user.email || '',
+          phone: undefined,
+          role: user.role || 'worker',
+          salary: 0,
+          avatar_url: user.user_metadata?.avatar_url,
+          created_at: user.created_at || new Date().toISOString(),
+          last_seen: undefined,
+          current_task: undefined,
+          completed_tasks: [],
+          penalty_percentage: undefined
+        }}
         open={isProfileDialogOpen}
         onOpenChange={setIsProfileDialogOpen}
       />
