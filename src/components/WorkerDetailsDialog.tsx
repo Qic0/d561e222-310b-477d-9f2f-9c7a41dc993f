@@ -616,7 +616,7 @@ export const WorkerDetailsDialog = ({ worker, open, onOpenChange }: WorkerDetail
                               </>
                             ) : (
                               <>
-                                <Badge className="bg-success/10 text-success border-success/20 font-display font-semibold text-lg px-4 py-2">
+                                <Badge className="bg-green-500/10 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800 font-display font-semibold text-lg px-4 py-2">
                                   +{Number(task.payment).toLocaleString('ru-RU')} ₽
                                 </Badge>
                                 {task.is_review && (
